@@ -1,4 +1,4 @@
-package ru.clevertec.model;
+package ru.clevertec.reflection.model;
 
 import lombok.Data;
 

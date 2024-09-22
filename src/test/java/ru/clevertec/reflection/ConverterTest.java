@@ -2,8 +2,8 @@ package ru.clevertec.reflection;
 
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import ru.clevertec.model.Order;
-import ru.clevertec.model.Product;
+import ru.clevertec.reflection.model.Order;
+import ru.clevertec.reflection.model.Product;
 import ru.clevertec.reflection.utils.Converter;
 
 import java.math.BigDecimal;
@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ConverterTest {
 
     @Test
-    void createJson() throws IllegalAccessException {
+    void shouldCreateValidJson() throws IllegalAccessException {
         Order order = new Order();
         order.setId(UUID.randomUUID());
         order.setCreateDate(OffsetDateTime
