@@ -2,7 +2,6 @@ package ru.clevertec.reflection.utils;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ public class Converter {
         Map<String, Object> map = parse(obj);
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             Object value = entry.getValue();
-            if(value!= null) {
+            if (value != null) {
                 stringBuilder.append("\"" + entry.getKey() + "\":");
                 appendValue(value);
                 stringBuilder.append(",");
@@ -54,8 +53,6 @@ public class Converter {
             Class cl = object.getClass();
             if (cl.isPrimitive()) {
                 stringBuilder.append(object);
-            } else if (cl.equals(String.class)) {
-                stringBuilder.append("\"" + object + "\"");
             } else if (object instanceof List<?>) {
                 stringBuilder.append(LEFT_SQ_BRACE);
                 for (Object obj : (List) object) {
@@ -66,7 +63,6 @@ public class Converter {
                 }
                 stringBuilder.append(RIGHT_SQ_BRACE);
             } else if (object instanceof Map<?, ?>) {
-
                 for (Map.Entry entry : ((Map<?, ?>) object).entrySet()) {
                     stringBuilder.append(LEFT_CR_BRACE);
                     stringBuilder.append("\"" + entry.getKey().toString() + "\":");
@@ -76,7 +72,7 @@ public class Converter {
                 }
 
             } else {
-                stringBuilder.append("\"" + object.toString() + "\"");
+                stringBuilder.append("\"" + object + "\"");
             }
         }
     }
