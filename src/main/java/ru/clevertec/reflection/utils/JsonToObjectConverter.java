@@ -2,7 +2,9 @@ package ru.clevertec.reflection.utils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +16,8 @@ public class JsonToObjectConverter {
 
     private static final String REGEXP_FOR_STRING_VAL = "\\\"%s\\\":\\s*\\\"(.*?)\\\"";
     private static final String REGEXP_FOR_LIST_VAL = "\\\"%s\\\":\\s*\\[(.*?)\\]";
+
+    private static final int INDENTATION = 2;
 
     public static Object createObject(Map<String, Object> objectsMap, Class clazz) throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, InstantiationException {
         Object object = clazz.getDeclaredConstructor().newInstance();
@@ -28,7 +32,7 @@ public class JsonToObjectConverter {
         return object;
     }
 
-    public static Map<String, Object> createMapFromJsonString(String jsonAsString, Class clazz) {
+    public static Map<String, Object> createMapFromJsonString(String jsonAsString, Class clazz) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
         Map<String, Object> map = new HashMap<>();
         Field[] fields = clazz.getDeclaredFields();
         String after = jsonAsString.trim().replace("\n", "")
@@ -41,23 +45,40 @@ public class JsonToObjectConverter {
                 pattern = Pattern.compile(String.format(REGEXP_FOR_LIST_VAL, name));
             } else {
                 pattern = Pattern.compile(String.format(REGEXP_FOR_STRING_VAL, name));
-                Matcher matcher = pattern.matcher(after);
-                String s = null;
-                while (matcher.find())
-                    s = matcher.group();
-                String[] str = s.split("\":");
-                str[1] = str[1].trim().replaceAll("\"", "");
+            }
+            Matcher matcher = pattern.matcher(after);
+            String s = null;
+            while (matcher.find())
+                s = matcher.group();
+            if (s!= null) {
+                s = s.substring(s.indexOf("\":") + INDENTATION)
+                        .trim().replaceAll("\"", "");
+
                 if (type == UUID.class) {
-                    map.put(name, UUID.fromString(str[1]));
+                    map.put(name, UUID.fromString(s));
                 } else if (type == OffsetDateTime.class) {
-                    map.put(name, OffsetDateTime.parse(str[1]));
+                    map.put(name, OffsetDateTime.parse(s));
                 } else if (type.isPrimitive()) {
-                    map.put(name, str[1]);
+                    map.put(name, s);
+                } else if (type == List.class) {
+                    List<Object> list = new ArrayList<>();
+                    s = s.replace("[", "")
+                            .replace("]", "");
+                    String key = name;
+                    String[] arr = s.split("\\}\s*,\s*\\{");
+                    ParameterizedType listType = (ParameterizedType) field.getGenericType();
+                    Class<?> listClass = (Class<?>) listType.getActualTypeArguments()[0];
+                    for (String str : arr) {
+                        Map<String, Object> map2 = createMapFromJsonString(str, listClass);
+                        list.add(createObject(map2, listClass));
+                    }
+                    map.put(key, list);
                 } else {
-                    return createMapFromJsonString(str[1], type);
+                    map.put(name, null);
                 }
             }
         }
         return map;
     }
+
 }
