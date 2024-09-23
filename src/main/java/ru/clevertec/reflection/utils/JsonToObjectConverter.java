@@ -50,14 +50,17 @@ public class JsonToObjectConverter {
             String s = null;
             while (matcher.find())
                 s = matcher.group();
-            if (s!= null) {
+            if (s != null) {
                 s = s.substring(s.indexOf("\":") + INDENTATION)
-                        .trim().replaceAll("\"", "");
-
-                if (type == UUID.class) {
-                    map.put(name, UUID.fromString(s));
+                        .trim();
+                if (type == String.class) {
+                    map.put(name, s.replaceAll("\"", ""));
+                } else if (type == UUID.class) {
+                    map.put(name, UUID.fromString(s.replaceAll("\"", "")));
                 } else if (type == OffsetDateTime.class) {
-                    map.put(name, OffsetDateTime.parse(s));
+                    map.put(name, OffsetDateTime.parse(s.replaceAll("\"", "")));
+                } else if (type == Double.class) {
+                    map.put(name, Double.valueOf(s.replaceAll("\"", "")));
                 } else if (type.isPrimitive()) {
                     map.put(name, s);
                 } else if (type == List.class) {
@@ -73,8 +76,13 @@ public class JsonToObjectConverter {
                         list.add(createObject(map2, listClass));
                     }
                     map.put(key, list);
+                } else if (type == Map.class) {
+                    Map<Object, Object> values = new HashMap<>();
+                    String key = name;
+                    //not implemented yet
+                    map.put(key, values);
                 } else {
-                    map.put(name, null);
+                    map.put(name, createMapFromJsonString(s, type));
                 }
             }
         }
