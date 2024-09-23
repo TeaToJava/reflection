@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Converter {
+public class ObjectToJsonConverter {
     private static final String LEFT_CR_BRACE = "{";
     private static final String RIGHT_CR_BRACE = "}";
     private static final String LEFT_SQ_BRACE = "[";

@@ -3,6 +3,7 @@ package ru.clevertec.reflection.utils;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class JsonToObjectConverter {
         Field[] fields = clazz.getDeclaredFields();
         String after = jsonAsString.trim().replace("\n", "")
                 .replaceAll(" +", " ");
+        Object value = null;
         for (Field field : fields) {
             Pattern pattern;
             Class type = field.getType();
@@ -53,21 +55,10 @@ public class JsonToObjectConverter {
             if (s != null) {
                 s = s.substring(s.indexOf("\":") + INDENTATION)
                         .trim();
-                if (type == String.class) {
-                    map.put(name, s.replaceAll("\"", ""));
-                } else if (type == UUID.class) {
-                    map.put(name, UUID.fromString(s.replaceAll("\"", "")));
-                } else if (type == OffsetDateTime.class) {
-                    map.put(name, OffsetDateTime.parse(s.replaceAll("\"", "")));
-                } else if (type == Double.class) {
-                    map.put(name, Double.valueOf(s.replaceAll("\"", "")));
-                } else if (type.isPrimitive()) {
-                    map.put(name, s);
-                } else if (type == List.class) {
+                if (type == List.class) {
                     List<Object> list = new ArrayList<>();
                     s = s.replace("[", "")
                             .replace("]", "");
-                    String key = name;
                     String[] arr = s.split("\\}\s*,\s*\\{");
                     ParameterizedType listType = (ParameterizedType) field.getGenericType();
                     Class<?> listClass = (Class<?>) listType.getActualTypeArguments()[0];
@@ -75,18 +66,50 @@ public class JsonToObjectConverter {
                         Map<String, Object> map2 = createMapFromJsonString(str, listClass);
                         list.add(createObject(map2, listClass));
                     }
-                    map.put(key, list);
+                    value = list;
                 } else if (type == Map.class) {
+                    ParameterizedType mapType = (ParameterizedType) field.getGenericType();
+                    Class<?> keyClass = (Class<?>) mapType.getActualTypeArguments()[0];
+                    Class<?> valueClass = (Class<?>) mapType.getActualTypeArguments()[1];
                     Map<Object, Object> values = new HashMap<>();
-                    String key = name;
+                    String keyString = null;
+                    String valueString = null;
                     //not implemented yet
-                    map.put(key, values);
+                    for (Map.Entry entry : values.entrySet()) {
+                        Object objectObjectMapKey = returnValue(keyClass, keyString);
+                        Object objectObjectMapValue = returnValue(valueClass, valueString);
+                        values.put(objectObjectMapKey, objectObjectMapValue);
+                    }
+                    value = values;
                 } else {
-                    map.put(name, createMapFromJsonString(s, type));
+                    value = returnValue(type, s);
                 }
+                if (value == null) {
+                    createMapFromJsonString(s, type);
+                }
+                map.put(name, value);
             }
         }
         return map;
     }
 
+    private static Object returnValue(Class type, String string) {
+        if (string != null) {
+            String s = string.replaceAll("\"", "");
+            if (type == String.class) {
+                return s;
+            } else if (type == UUID.class) {
+                return UUID.fromString(s);
+            } else if (type == OffsetDateTime.class) {
+                return OffsetDateTime.parse(s);
+            } else if (type == Double.class) {
+                return Double.valueOf(s);
+            } else if (type == BigDecimal.class) {
+                return new BigDecimal(s);
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
 }
